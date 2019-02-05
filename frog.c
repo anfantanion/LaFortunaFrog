@@ -47,7 +47,7 @@ typedef struct {
 	uint8_t prevX;
 } frog;
 
-const int8_t roadLaneSpeed[numRoadLanes] = {-1,3,1,2,1};
+const int8_t roadLaneSpeed[numRoadLanes] = {-1,3,-2,2,1};
 const uint8_t vehicleLength[numRoadLanes] = {2*unitLength,2*unitLength,1*unitLength, 1*unitLength,1*unitLength};
 const uint16_t laneColours[numRoadLanes] = {GOLD,GREEN_YELLOW,PALE_TURQUOISE,CRIMSON,LAVENDER};
 
@@ -56,7 +56,7 @@ const frog defaultFrog = {14,13,120+frogSize/2,120+frogSize/2};
 volatile vehicle roadLanes[numRoadLanes][maxVehiclesPerLane] = {
 	{{40,40},{90,90},{150,150}},
 	{{40,40},{90,90},{150,150}},
-	{{40,40},{90,90},{150,150}},
+	{{10,10},{90,90},{160,160}},
 	{{40,40},{90,90},{150,150}},
 	{{40,40},{90,90},{150,150}}
 };
@@ -160,12 +160,12 @@ void drawRoads(){
 
 
 void updateVehicles(){
+	//Relies on 8 bit overflow to loop
 	for(uint8_t lane = 0; lane<numRoadLanes;lane++){
-		uint16_t speed = roadLaneSpeed[lane];
+		uint8_t speed = roadLaneSpeed[lane];
 		for (uint8_t ve = 0; ve<maxVehiclesPerLane;ve++){
 			roadLanes[lane][ve].pos += speed;
 		}
-		
 	}
 }
 
@@ -181,25 +181,23 @@ void collision(){
 					(mainFrog.x > vex.pos-vehicleLength[mainFrog.track-roadOffset]  &&  mainFrog.x < (vex.pos))
 				){
 					collideHandler();
+					break;
 				}
 		}
 	}
 }
 
 void collideHandler(){
-	collide = 0;
 	lives-=1;
 	mainFrog.x = defaultFrog.x;
 	mainFrog.track = defaultFrog.track;
 	drawFrog();
 	drawVehicles();
-	collide = 1;
+	drawStats();
 }
 
 void drawStats(){
 	char buffer[4];
-	sprintf(buffer, "%03d", fps);
-	display_string_xy(buffer, 0, 0);
 
 	sprintf(buffer, "%03d", lives);
 	display_string_xy("Lives:", 20, 0);
@@ -208,8 +206,10 @@ void drawStats(){
 	sprintf(buffer, "%03d", score);
 	display_string_xy("Score:", 80, 0);
 	display_string_xy(buffer, 120, 0);
-	fps = 0;
 
+	sprintf(buffer, "%01d", collide);
+	display_string_xy("Collision:", 140, 0);
+	display_string_xy(buffer, 200, 0);
 }
 
 ISR(INT6_vect)
@@ -223,6 +223,8 @@ ISR(INT6_vect)
 //Movement
 ISR(TIMER1_COMPA_vect){	
 	if (center_pressed()){
+		collide=!collide;
+		drawStats();
 	}
 	if(left_pressed() && mainFrog.x>22){
 		mainFrog.x-=22;
@@ -243,6 +245,11 @@ ISR(TIMER1_COMPA_vect){
 ISR(TIMER3_COMPA_vect)
 {
 	drawStats();
+
+	char buffer[4];
+	sprintf(buffer, "%03d", fps);
+	display_string_xy(buffer, 0, 0);
+	fps = 0;
 }
 
 void main() {
@@ -268,24 +275,25 @@ void main() {
 	/* Enable game timer interrupt (Timer 1 CTC Mode 4) */
 	TCCR1A = 0;
 	TCCR1B = _BV(WGM12);
-	//TCCR1B |= _BV(1);  //Timer Scale
-	//OCR1A = 31250; //Timer trigger value
-
+	
 	TIMSK1 |= _BV(OCIE1A);
 
-	TCCR1B |= _BV(2);
-	OCR1A = 2000;
+	TCCR1B |= _BV(1);  //Timer Scale
+	OCR1A = 31250; //Timer trigger value
+	//TCCR1B |= _BV(2);
+	//OCR1A = 2000;
 
 	while (1){
 		collided = 0;
 		mainFrog = defaultFrog;
 		drawRoads();
+		drawStats();
 		sei();
-		while (1){}
+		while (lives!=0){}
 		cli();
 		drawFrog();
 		display_string_xy("GAME OVER", 100, 50);
-		while(!center_pressed()){}
+		while(!center_pressed()){lives=3;}
 	}
 	
 
