@@ -82,8 +82,6 @@ void drawVehicles(){
 			if (vSpeed > 0 ){
 				//Moved off right side of screen
 				if (vex.pos < vex.prevPos){
-					rectangle newR = {0,vex.pos,currentlane,currentlane + laneBottomOffest};
-					fill_rectangle(newR,laneColours[lane]);
 					roadLanes[lane][ve].prevPos = vex.pos;
 				}
 				//Moving right
@@ -109,19 +107,24 @@ void drawVehicles(){
 				uint8_t leftPos = vex.pos-size;
 				uint8_t leftPrevPos = vex.prevPos-size;
 				if (leftPos > leftPrevPos){
-					rectangle newR = {leftPos,screenWidth,currentlane,currentlane + laneBottomOffest};
-					rectangle oldR = {0,leftPrevPos,currentlane,currentlane + laneBottomOffest};
-					fill_rectangle(newR,HOT_PINK);
-					fill_rectangle(oldR,GREY);
 					roadLanes[lane][ve].prevPos = vex.pos;
 				}
 				//Moving right
-				if (leftPos < leftPrevPos){
+				else if (leftPos < leftPrevPos){
 					rectangle newR = {vex.pos-size, vex.prevPos-size,currentlane,currentlane + laneBottomOffest};
 					rectangle oldR = {vex.pos,vex.prevPos,currentlane,currentlane + laneBottomOffest};
 					fill_rectangle(newR,laneColours[lane]);
 					fill_rectangle(oldR,BLACK);
 					roadLanes[lane][ve].prevPos = vex.pos;
+				}
+				//If Should still be visible tale on right side. (This is faked so will not align with hitbox)
+				if (vex.pos < size){
+					uint8_t y = 255-(size-vex.pos)+1;
+					uint8_t z = 255-(size-vex.prevPos);
+					if (y<screenWidth){
+						rectangle newR = {z,y,currentlane,currentlane + laneBottomOffest};
+						fill_rectangle(newR,laneColours[lane]);
+					}
 				}
 
 				
@@ -235,7 +238,6 @@ ISR(TIMER1_COMPA_vect){
 	}
 	updateVehicles();
 	collision();
-	drawStats();
 }
 
 ISR(TIMER3_COMPA_vect)
