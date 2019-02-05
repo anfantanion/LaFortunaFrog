@@ -83,9 +83,7 @@ void drawVehicles(){
 				//Moved off right side of screen
 				if (vex.pos < vex.prevPos){
 					rectangle newR = {0,vex.pos,currentlane,currentlane + laneBottomOffest};
-					rectangle oldR = {vex.prevPos-size,screenWidth,currentlane,currentlane + laneBottomOffest};
 					fill_rectangle(newR,laneColours[lane]);
-					fill_rectangle(oldR,BLACK);
 					roadLanes[lane][ve].prevPos = vex.pos;
 				}
 				//Moving right
@@ -95,6 +93,15 @@ void drawVehicles(){
 					fill_rectangle(newR,laneColours[lane]);
 					fill_rectangle(oldR,BLACK);
 					roadLanes[lane][ve].prevPos = vex.pos;
+				}
+				//If Should still be visible tale on right side. (This is faked so will not align with hitbox)
+				if (vex.pos < size){
+					int y = 255-(size-vex.pos);
+					int z = 255-(size-vex.prevPos);
+					if (y<screenWidth){
+						rectangle oldR = {z,y,currentlane,currentlane + laneBottomOffest};
+						fill_rectangle(oldR,BLACK);
+					}
 				}
 			}
 			else{ //Moving Left
@@ -265,7 +272,7 @@ void main() {
 	TIMSK1 |= _BV(OCIE1A);
 
 	TCCR1B |= _BV(2);
-	OCR1A = 10000;
+	OCR1A = 2000;
 
 	while (1){
 		collided = 0;
