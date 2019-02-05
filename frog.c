@@ -96,8 +96,8 @@ void drawVehicles(){
 				}
 				//If Should still be visible tale on right side. (This is faked so will not align with hitbox)
 				if (vex.pos < size){
-					int y = 255-(size-vex.pos);
-					int z = 255-(size-vex.prevPos);
+					uint8_t y = 255-(size-vex.pos)+1;
+					uint8_t z = 255-(size-vex.prevPos);
 					if (y<screenWidth){
 						rectangle oldR = {z,y,currentlane,currentlane + laneBottomOffest};
 						fill_rectangle(oldR,BLACK);
