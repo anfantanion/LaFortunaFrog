@@ -21,12 +21,14 @@
 #define frogSize 12
 #define frogColour LIME_GREEN
 
+#define scoreMovement 10;
+
 void drawVehicles();
 void drawFrog();
 void drawRoads();
 void updateVehicles();
 void collision();
-void collideHandler();
+void deathHandler();
 void drawStats();
 
 const uint16_t colours[numTracks] = {DARK_BLUE,FOREST_GREEN,DARK_BLUE,DARK_BLUE,DARK_BLUE,DARK_BLUE,DARK_BLUE,DARK_VIOLET,BLACK,BLACK,BLACK,BLACK,BLACK,DARK_VIOLET};
@@ -41,6 +43,7 @@ typedef struct {
 } vehicle;
 
 typedef struct {
+	uint8_t hiTrack;
 	uint8_t track;
 	uint8_t prevTrack;
 	uint8_t x;
@@ -51,7 +54,7 @@ const int8_t roadLaneSpeed[numRoadLanes] = {-1,3,-2,2,1};
 const uint8_t vehicleLength[numRoadLanes] = {2*unitLength,2*unitLength,1*unitLength, 1*unitLength,1*unitLength};
 const uint16_t laneColours[numRoadLanes] = {GOLD,GREEN_YELLOW,PALE_TURQUOISE,CRIMSON,LAVENDER};
 
-const frog defaultFrog = {14,13,120+frogSize/2,120+frogSize/2};
+const frog defaultFrog = {14,14,13,120+frogSize/2,120+frogSize/2};
 
 volatile vehicle roadLanes[numRoadLanes][maxVehiclesPerLane] = {
 	{{40,40},{90,90},{150,150}},
@@ -186,17 +189,18 @@ void collision(){
 					||
 					(mainFrog.x > vex.pos-vehicleLength[mainFrog.track-roadOffset]  &&  mainFrog.x < (vex.pos))
 				){
-					collideHandler();
+					deathHandler();
 					break;
 				}
 		}
 	}
 }
 
-void collideHandler(){
+void deathHandler(){
 	lives-=1;
 	mainFrog.x = defaultFrog.x;
 	mainFrog.track = defaultFrog.track;
+	mainFrog.hiTrack = defaultFrog.hiTrack;
 	drawFrog();
 	drawVehicles();
 	drawStats();
@@ -240,6 +244,11 @@ ISR(TIMER1_COMPA_vect){
 	}
 	if(up_pressed() && mainFrog.track>2){
 		mainFrog.track-=1;
+		if (mainFrog.track<mainFrog.hiTrack){
+			score+=scoreMovement;
+			mainFrog.hiTrack = mainFrog.track;
+			drawStats();
+		}
 	}
 	if(down_pressed() && mainFrog.track<numTracks){
 		mainFrog.track+=1;
