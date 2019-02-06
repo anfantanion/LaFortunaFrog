@@ -207,18 +207,7 @@ void updateVehicles(){
 }
 
 void collision(){
-	if (mainFrog.track==goalTrack+1){
-		for (uint8_t x = 0; x<numOfGoals; x+=1){
-			if (!goalReached[x] && goalPositions[x]-(unitLength/2)<mainFrog.x  && goalPositions[x]+(unitLength/2)>mainFrog.x){
-				goalReached[x] = 1;
-				drawGoals();
-				resetFrog();
-				score+=100;
-				drawStats();
-			}
-		}
-	}
-	else if (enableCollision && roadOffset<=mainFrog.track && mainFrog.track<numTracks){ //If on road
+	if (enableCollision && roadOffset<=mainFrog.track && mainFrog.track<numTracks){ //If on road
 		for (uint8_t ve = 0; ve<maxVehiclesPerLane;ve++){
 				vehicle vex = roadLanes[mainFrog.track-roadOffset][ve];
 				if (
@@ -261,8 +250,8 @@ void drawStats(){
 	display_string_xy(buffer, 120, 0);
 
 	sprintf(buffer, "%01d", enableCollision);
-	display_string_xy("Collision:", 140, 0);
-	display_string_xy(buffer, 200, 0);
+	display_string_xy("Collision:", 150, 0);
+	display_string_xy(buffer, 210, 0);
 }
 
 void putText(uint8_t t, uint16_t x, uint16_t y){
@@ -292,12 +281,25 @@ ISR(TIMER1_COMPA_vect){
 		mainFrog.x+=frogStepX;
 	}
 	if(up_pressed() && mainFrog.track>2){
-		//if (mainFrog.track==goalTrack+1)
-		mainFrog.track-=1;
-		if (mainFrog.track<mainFrog.hiTrack){
-			score+=scoreMovement;
-			mainFrog.hiTrack = mainFrog.track;
-			drawStats();
+		//If just below goal row check that the space is free.
+		if (mainFrog.track==goalTrack+2){
+			for (uint8_t x = 0; x<numOfGoals; x+=1){
+				if (!goalReached[x] && goalPositions[x]-(unitLength/2)<mainFrog.x  && goalPositions[x]+(unitLength/2)>mainFrog.x){
+					goalReached[x] = 1;
+					drawGoals();
+					resetFrog();
+					score+=100;
+					drawStats();
+				}
+			}
+		}
+		else{
+			mainFrog.track-=1;
+			if (mainFrog.track<mainFrog.hiTrack){
+				score+=scoreMovement;
+				mainFrog.hiTrack = mainFrog.track;
+				drawStats();
+			}
 		}
 	}
 	if(down_pressed() && mainFrog.track<numTracks){
