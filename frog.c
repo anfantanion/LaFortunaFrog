@@ -11,6 +11,9 @@
 
 #define trackWidth 22
 #define numTracks 14
+#define goalTrack 1
+#define numOfGoals 5
+#define goalBGColour DARK_GREEN
 #define unitLength 20
 #define offsetPx 12
 #define roadOffset 9
@@ -20,18 +23,24 @@
 
 #define frogSize 12
 #define frogColour LIME_GREEN
+#define frogStepX 22
 
 #define scoreMovement 10;
 
 void drawVehicles();
 void drawFrog();
 void drawRoads();
+void drawGoals();
 void updateVehicles();
 void collision();
+void resetFrog();
 void deathHandler();
 void drawStats();
+void putText(uint8_t t, uint16_t x, uint16_t y);
 
-const uint16_t colours[numTracks] = {DARK_BLUE,FOREST_GREEN,DARK_BLUE,DARK_BLUE,DARK_BLUE,DARK_BLUE,DARK_BLUE,DARK_VIOLET,BLACK,BLACK,BLACK,BLACK,BLACK,DARK_VIOLET};
+const uint16_t colours[numTracks] = {BLACK,FOREST_GREEN,DARK_BLUE,DARK_BLUE,DARK_BLUE,DARK_BLUE,DARK_BLUE,DARK_VIOLET,BLACK,BLACK,BLACK,BLACK,BLACK,DARK_VIOLET};
+const uint8_t goalPositions[numOfGoals] = {32,76,120,164,208};
+volatile uint8_t goalReached[numOfGoals] = {0,0,0,0};
 volatile uint8_t lives = 3;
 volatile uint16_t score = 0;
 volatile uint8_t fps = 0;
@@ -146,7 +155,7 @@ void drawFrog(){
 		int16_t previouslane = mainFrog.prevTrack * trackWidth -5;
 		rectangle newR = {mainFrog.x-frogSize,mainFrog.x,currentlane,currentlane+12};
 		rectangle oldR = {mainFrog.prevX-frogSize,mainFrog.prevX,previouslane,previouslane+12};
-		fill_rectangle(newR,LIME_GREEN);
+		fill_rectangle(newR,frogColour);
 		fill_rectangle(oldR,colours[mainFrog.prevTrack-1]);
 		mainFrog.prevTrack=mainFrog.track;
 		mainFrog.prevX=mainFrog.x;
@@ -161,9 +170,28 @@ void drawFrog(){
 
 
 void drawRoads(){
+	//Draw Lanes
 	for (uint8_t x = 0;x < numTracks; x+=1){
 		rectangle r = {0,display.width,x*trackWidth+offsetPx,(x+1)*trackWidth+offsetPx};
 		fill_rectangle(r,colours[x]);
+	}
+	//Draw Goals
+	drawGoals();
+	//Draw top border.
+	rectangle r = {0,display.width,(goalTrack-1)*trackWidth+offsetPx+20,(goalTrack)*trackWidth+offsetPx};
+	fill_rectangle(r,colours[goalTrack]);
+}
+
+
+void drawGoals(){
+	for (uint8_t x = 0; x<numOfGoals; x+=1){
+		rectangle r = {goalPositions[x]-(unitLength/2),goalPositions[x]+(unitLength/2),goalTrack*trackWidth+offsetPx,(goalTrack+1)*trackWidth+offsetPx};
+		fill_rectangle(r,goalBGColour);
+		if (goalReached[x]){
+			int16_t currentlane = (goalTrack+1) * trackWidth -5;
+			r = (rectangle){goalPositions[x]-frogSize/2,goalPositions[x]+frogSize/2,currentlane,currentlane+12};
+			fill_rectangle(r,frogColour);
+		}
 	}
 }
 
@@ -179,7 +207,18 @@ void updateVehicles(){
 }
 
 void collision(){
-	if (enableCollision && roadOffset<=mainFrog.track && mainFrog.track<numTracks){ //If on road
+	if (mainFrog.track==goalTrack+1){
+		for (uint8_t x = 0; x<numOfGoals; x+=1){
+			if (!goalReached[x] && goalPositions[x]-(unitLength/2)<mainFrog.x  && goalPositions[x]+(unitLength/2)>mainFrog.x){
+				goalReached[x] = 1;
+				drawGoals();
+				resetFrog();
+				score+=100;
+				drawStats();
+			}
+		}
+	}
+	else if (enableCollision && roadOffset<=mainFrog.track && mainFrog.track<numTracks){ //If on road
 		for (uint8_t ve = 0; ve<maxVehiclesPerLane;ve++){
 				vehicle vex = roadLanes[mainFrog.track-roadOffset][ve];
 				if (
@@ -198,12 +237,16 @@ void collision(){
 
 void deathHandler(){
 	lives-=1;
+	resetFrog();
+	drawStats();
+}
+
+void resetFrog(){
 	mainFrog.x = defaultFrog.x;
 	mainFrog.track = defaultFrog.track;
 	mainFrog.hiTrack = defaultFrog.hiTrack;
 	drawFrog();
 	drawVehicles();
-	drawStats();
 }
 
 void drawStats(){
@@ -222,6 +265,12 @@ void drawStats(){
 	display_string_xy(buffer, 200, 0);
 }
 
+void putText(uint8_t t, uint16_t x, uint16_t y){
+	char buffer[4];
+	sprintf(buffer, "%03d", t);
+	display_string_xy(buffer, x, y);
+}
+
 ISR(INT6_vect)
 {
 	
@@ -236,13 +285,14 @@ ISR(TIMER1_COMPA_vect){
 		enableCollision=!enableCollision;
 		drawStats();
 	}
-	if(left_pressed() && mainFrog.x>22){
-		mainFrog.x-=22;
+	if(left_pressed() && mainFrog.x>frogStepX){
+		mainFrog.x-=frogStepX;
 	}
-	if(right_pressed() && mainFrog.x<screenWidth-22){
-		mainFrog.x+=22;
+	if(right_pressed() && mainFrog.x<screenWidth-frogStepX){
+		mainFrog.x+=frogStepX;
 	}
 	if(up_pressed() && mainFrog.track>2){
+		//if (mainFrog.track==goalTrack+1)
 		mainFrog.track-=1;
 		if (mainFrog.track<mainFrog.hiTrack){
 			score+=scoreMovement;
