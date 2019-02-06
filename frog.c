@@ -33,7 +33,7 @@ const uint16_t colours[numTracks] = {DARK_BLUE,FOREST_GREEN,DARK_BLUE,DARK_BLUE,
 volatile uint8_t lives = 3;
 volatile uint16_t score = 0;
 volatile uint8_t fps = 0;
-volatile uint8_t collide = 1;
+volatile uint8_t enableCollision = 1;
 
 typedef struct {
 	uint8_t prevPos;
@@ -148,6 +148,12 @@ void drawFrog(){
 		mainFrog.prevTrack=mainFrog.track;
 		mainFrog.prevX=mainFrog.x;
 	}
+	//If collision is disabled draw frog every refresh.
+	else if(!enableCollision) {
+		int16_t currentlane = mainFrog.track * trackWidth -5;
+		rectangle newR = {mainFrog.x-frogSize,mainFrog.x,currentlane,currentlane+12};
+		fill_rectangle(newR,LIME_GREEN);
+	}
 }
 
 
@@ -170,7 +176,7 @@ void updateVehicles(){
 }
 
 void collision(){
-	if (collide && roadOffset<=mainFrog.track && mainFrog.track<numTracks){ //If on road
+	if (enableCollision && roadOffset<=mainFrog.track && mainFrog.track<numTracks){ //If on road
 		for (uint8_t ve = 0; ve<maxVehiclesPerLane;ve++){
 				vehicle vex = roadLanes[mainFrog.track-roadOffset][ve];
 				if (
@@ -207,7 +213,7 @@ void drawStats(){
 	display_string_xy("Score:", 80, 0);
 	display_string_xy(buffer, 120, 0);
 
-	sprintf(buffer, "%01d", collide);
+	sprintf(buffer, "%01d", enableCollision);
 	display_string_xy("Collision:", 140, 0);
 	display_string_xy(buffer, 200, 0);
 }
@@ -223,7 +229,7 @@ ISR(INT6_vect)
 //Movement
 ISR(TIMER1_COMPA_vect){	
 	if (center_pressed()){
-		collide=!collide;
+		enableCollision=!enableCollision;
 		drawStats();
 	}
 	if(left_pressed() && mainFrog.x>22){
