@@ -124,15 +124,14 @@ void drawVehicles(){
 				//Moving of left side of screen
 				uint8_t leftPos = vex.pos-size;
 				uint8_t leftPrevPos = vex.prevPos-size;
-				if (leftPos > leftPrevPos){
-					roadLanes[lane][ve].prevPos = vex.pos;
-				}
-				//Moving right
-				else if (leftPos < leftPrevPos){
+				//Moving left
+				if (leftPos < leftPrevPos){
 					rectangle newR = {vex.pos-size, vex.prevPos-size,currentlane,currentlane + laneBottomOffest};
 					rectangle oldR = {vex.pos,vex.prevPos,currentlane,currentlane + laneBottomOffest};
-					fill_rectangle(newR,laneColours[lane]);
-					fill_rectangle(oldR,colours[(roadOffset + lane -1)]);
+					if (vex.pos-size <= vex.prevPos-size) //Prevent broken rectangles
+						fill_rectangle(newR,laneColours[lane]);
+					if (vex.pos <= vex.prevPos) 
+						fill_rectangle(oldR,colours[(roadOffset + lane -1)]);
 					roadLanes[lane][ve].prevPos = vex.pos;
 				}
 				//If Should still be visible tale on right side. (This is faked so will not align with hitbox)
@@ -144,6 +143,7 @@ void drawVehicles(){
 						fill_rectangle(newR,laneColours[lane]);
 					}
 				}
+				roadLanes[lane][ve].prevPos = vex.pos;
 
 				
 			}
