@@ -16,9 +16,9 @@
 #define goalBGColour DARK_GREEN
 #define unitLength 20
 #define offsetPx 12
-#define roadOffset 9
+#define roadOffset 3
 
-#define numRoadLanes 5
+#define numRoadLanes 11
 #define maxVehiclesPerLane 3
 
 #define frogSize 12
@@ -59,9 +59,9 @@ typedef struct {
 	uint8_t prevX;
 } frog;
 
-const int8_t roadLaneSpeed[numRoadLanes] = {-1,3,-2,2,1};
-const uint8_t vehicleLength[numRoadLanes] = {2*unitLength,2*unitLength,1*unitLength, 1*unitLength,1*unitLength};
-const uint16_t laneColours[numRoadLanes] = {GOLD,GREEN_YELLOW,PALE_TURQUOISE,CRIMSON,LAVENDER};
+const int8_t roadLaneSpeed[numRoadLanes] = {1,-2,3,1,-2,0,-1,3,-2,2,1};
+const uint8_t vehicleLength[numRoadLanes] = {2*unitLength,2*unitLength,1*unitLength, 1*unitLength,1*unitLength,0,2*unitLength,2*unitLength,1*unitLength, 1*unitLength,1*unitLength};
+const uint16_t laneColours[numRoadLanes] = {BURLY_WOOD,RED,BURLY_WOOD,BURLY_WOOD,RED,BLACK,GOLD,GREEN_YELLOW,PALE_TURQUOISE,CRIMSON,LAVENDER};
 
 const frog defaultFrog = {14,14,13,120+frogSize/2,120+frogSize/2};
 
@@ -69,6 +69,12 @@ volatile vehicle roadLanes[numRoadLanes][maxVehiclesPerLane] = {
 	{{40,40},{90,90},{150,150}},
 	{{40,40},{90,90},{150,150}},
 	{{10,10},{90,90},{160,160}},
+	{{40,40},{90,90},{150,150}},
+	{{40,40},{90,90},{150,150}},
+	{{40,40},{90,90},{150,150}},
+	{{40,40},{90,90},{150,150}},
+	{{10,10},{90,90},{160,160}},
+	{{40,40},{90,90},{150,150}},
 	{{40,40},{90,90},{150,150}},
 	{{40,40},{90,90},{150,150}}
 };
@@ -101,7 +107,7 @@ void drawVehicles(){
 					rectangle newR = {vex.prevPos,vex.pos,currentlane,currentlane + laneBottomOffest};
 					rectangle oldR = {vex.prevPos-size,vex.pos-size,currentlane,currentlane + laneBottomOffest};
 					fill_rectangle(newR,laneColours[lane]);
-					fill_rectangle(oldR,BLACK);
+					fill_rectangle(oldR,colours[(roadOffset + lane -1)]);
 					roadLanes[lane][ve].prevPos = vex.pos;
 				}
 				//If Should still be visible tale on right side. (This is faked so will not align with hitbox)
@@ -110,7 +116,7 @@ void drawVehicles(){
 					uint8_t z = 255-(size-vex.prevPos);
 					if (y<screenWidth){
 						rectangle oldR = {z,y,currentlane,currentlane + laneBottomOffest};
-						fill_rectangle(oldR,BLACK);
+						fill_rectangle(oldR,colours[(roadOffset + lane -1)]);
 					}
 				}
 			}
@@ -126,7 +132,7 @@ void drawVehicles(){
 					rectangle newR = {vex.pos-size, vex.prevPos-size,currentlane,currentlane + laneBottomOffest};
 					rectangle oldR = {vex.pos,vex.prevPos,currentlane,currentlane + laneBottomOffest};
 					fill_rectangle(newR,laneColours[lane]);
-					fill_rectangle(oldR,BLACK);
+					fill_rectangle(oldR,colours[(roadOffset + lane -1)]);
 					roadLanes[lane][ve].prevPos = vex.pos;
 				}
 				//If Should still be visible tale on right side. (This is faked so will not align with hitbox)
