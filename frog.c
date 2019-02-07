@@ -98,17 +98,12 @@ void drawVehicles(){
 			vehicle vex = roadLanes[lane][ve];
 			//Moving Right
 			if (vSpeed > 0 ){
-				//Moved off right side of screen
-				if (vex.pos < vex.prevPos){
-					roadLanes[lane][ve].prevPos = vex.pos;
-				}
 				//Moving right
-				else if (vex.pos > vex.prevPos){
+				if (vex.pos > vex.prevPos){
 					rectangle newR = {vex.prevPos,vex.pos,currentlane,currentlane + laneBottomOffest};
 					rectangle oldR = {vex.prevPos-size,vex.pos-size,currentlane,currentlane + laneBottomOffest};
 					fill_rectangle(newR,laneColours[lane]);
 					fill_rectangle(oldR,colours[(roadOffset + lane -1)]);
-					roadLanes[lane][ve].prevPos = vex.pos;
 				}
 				//If Should still be visible tale on right side. (This is faked so will not align with hitbox)
 				if (vex.pos < size){
@@ -119,20 +114,17 @@ void drawVehicles(){
 						fill_rectangle(oldR,colours[(roadOffset + lane -1)]);
 					}
 				}
+				roadLanes[lane][ve].prevPos = vex.pos;
 			}
-			else{ //Moving Left
-				//Moving of left side of screen
-				uint8_t leftPos = vex.pos-size;
-				uint8_t leftPrevPos = vex.prevPos-size;
+			else{ 
 				//Moving left
-				if (leftPos < leftPrevPos){
+				if (vex.pos-size < vex.prevPos-size){
 					rectangle newR = {vex.pos-size, vex.prevPos-size,currentlane,currentlane + laneBottomOffest};
 					rectangle oldR = {vex.pos,vex.prevPos,currentlane,currentlane + laneBottomOffest};
 					if (vex.pos-size <= vex.prevPos-size) //Prevent broken rectangles
 						fill_rectangle(newR,laneColours[lane]);
 					if (vex.pos <= vex.prevPos) 
 						fill_rectangle(oldR,colours[(roadOffset + lane -1)]);
-					roadLanes[lane][ve].prevPos = vex.pos;
 				}
 				//If Should still be visible tale on right side. (This is faked so will not align with hitbox)
 				if (vex.pos < size){
@@ -144,8 +136,6 @@ void drawVehicles(){
 					}
 				}
 				roadLanes[lane][ve].prevPos = vex.pos;
-
-				
 			}
 			
 			 
