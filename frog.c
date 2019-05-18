@@ -16,7 +16,8 @@
 #define goalBGColour DARK_GREEN
 #define unitLength 20
 #define offsetPx 12
-#define roadOffset 3
+#define lanesStartOffset 3
+#define roadStartOffset 9
 
 #define numRoadLanes 11
 #define maxVehiclesPerLane 3
@@ -90,7 +91,7 @@ volatile int8_t collided =0;
 void drawVehicles(){
 	//Draw road vehicles
 	for(uint8_t lane = 0; lane<numRoadLanes;lane++){
-		uint16_t currentlane = (roadOffset + lane -1) * trackWidth + offsetPx + laneTopOffset;
+		uint16_t currentlane = (lanesStartOffset + lane -1) * trackWidth + offsetPx + laneTopOffset;
 		uint8_t size = vehicleLength[lane];
 		int8_t vSpeed = roadLaneSpeed[lane];
 
@@ -103,7 +104,7 @@ void drawVehicles(){
 					rectangle newR = {vex.prevPos,vex.pos,currentlane,currentlane + laneBottomOffest};
 					rectangle oldR = {vex.prevPos-size,vex.pos-size,currentlane,currentlane + laneBottomOffest};
 					fill_rectangle(newR,laneColours[lane]);
-					fill_rectangle(oldR,colours[(roadOffset + lane -1)]);
+					fill_rectangle(oldR,colours[(lanesStartOffset + lane -1)]);
 				}
 				//If Should still be visible tale on right side. (This is faked so will not align with hitbox)
 				if (vex.pos < size){
@@ -111,7 +112,7 @@ void drawVehicles(){
 					uint8_t z = 255-(size-vex.prevPos);
 					if (y<screenWidth){
 						rectangle oldR = {z,y,currentlane,currentlane + laneBottomOffest};
-						fill_rectangle(oldR,colours[(roadOffset + lane -1)]);
+						fill_rectangle(oldR,colours[(lanesStartOffset + lane -1)]);
 					}
 				}
 				roadLanes[lane][ve].prevPos = vex.pos;
@@ -124,7 +125,7 @@ void drawVehicles(){
 					if (vex.pos-size <= vex.prevPos-size) //Prevent broken rectangles
 						fill_rectangle(newR,laneColours[lane]);
 					if (vex.pos <= vex.prevPos) 
-						fill_rectangle(oldR,colours[(roadOffset + lane -1)]);
+						fill_rectangle(oldR,colours[(lanesStartOffset + lane -1)]);
 				}
 				//If Should still be visible tale on right side. (This is faked so will not align with hitbox)
 				if (vex.pos < size){
@@ -157,7 +158,7 @@ void drawFrog(){
 		mainFrog.prevX=mainFrog.x;
 	}
 	//If collision is disabled draw frog every refresh.
-	else if(!enableCollision) {
+	else if(1|| !enableCollision) {
 		int16_t currentlane = mainFrog.track * trackWidth -5;
 		rectangle newR = {mainFrog.x-frogSize,mainFrog.x,currentlane,currentlane+12};
 		fill_rectangle(newR,LIME_GREEN);
@@ -203,21 +204,42 @@ void updateVehicles(){
 }
 
 void collision(){
-	if (enableCollision && roadOffset<=mainFrog.track && mainFrog.track<numTracks){ //If on road
+	if (enableCollision && roadStartOffset<=mainFrog.track && mainFrog.track<numTracks){ //If on road
 		for (uint8_t ve = 0; ve<maxVehiclesPerLane;ve++){
-				vehicle vex = roadLanes[mainFrog.track-roadOffset][ve];
+				vehicle vex = roadLanes[mainFrog.track-roadStartOffset][ve];
 				if (
-					(mainFrog.x < vex.pos  &&  mainFrog.x-frogSize > vex.pos-vehicleLength[mainFrog.track-roadOffset])
+					(mainFrog.x < vex.pos  &&  mainFrog.x-frogSize > vex.pos-vehicleLength[mainFrog.track-roadStartOffset])
 					||
-					(mainFrog.x-frogSize < vex.pos  &&  mainFrog.x-frogSize > vex.pos-vehicleLength[mainFrog.track-roadOffset])
+					(mainFrog.x-frogSize < vex.pos  &&  mainFrog.x-frogSize > vex.pos-vehicleLength[mainFrog.track-roadStartOffset])
 					||
-					(mainFrog.x > vex.pos-vehicleLength[mainFrog.track-roadOffset]  &&  mainFrog.x < (vex.pos))
+					(mainFrog.x > vex.pos-vehicleLength[mainFrog.track-roadStartOffset]  &&  mainFrog.x < (vex.pos))
 				){
 					deathHandler();
 					break;
 				}
 		}
 	}
+
+	else if (roadStartOffset>mainFrog.track){ //If on water
+		for (uint8_t ve = 0; ve<maxVehiclesPerLane;ve++){
+				vehicle vex = roadLanes[mainFrog.track-lanesStartOffset+4][ve];
+				if (
+					(mainFrog.x < vex.pos  &&  mainFrog.x-frogSize > vex.pos-vehicleLength[mainFrog.track-lanesStartOffset])
+					||
+					(mainFrog.x-frogSize < vex.pos  &&  mainFrog.x-frogSize > vex.pos-vehicleLength[mainFrog.track-lanesStartOffset])
+					||
+					(mainFrog.x > vex.pos-vehicleLength[mainFrog.track-lanesStartOffset]  &&  mainFrog.x < (vex.pos))
+				){
+					mainFrog.x+=roadLaneSpeed[ve];
+					break;
+				}
+				else{
+					//deathHandler();
+					break;
+				}
+		}
+	}
+
 }
 
 void deathHandler(){
@@ -230,8 +252,8 @@ void resetFrog(){
 	mainFrog.x = defaultFrog.x;
 	mainFrog.track = defaultFrog.track;
 	mainFrog.hiTrack = defaultFrog.hiTrack;
-	drawFrog();
 	drawVehicles();
+	drawFrog();
 }
 
 void drawStats(){
